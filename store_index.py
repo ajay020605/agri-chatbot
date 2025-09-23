@@ -1,3 +1,20 @@
+import re
+
+def clean_text(documents):
+    cleaned_docs = []
+    for doc in documents:
+        text = doc.page_content  # works with PyPDFLoader documents
+        # Remove ranges like 19-26
+        text = re.sub(r'\d+[-–]\d+','', text)
+        # Remove standalone numbers
+        text = re.sub(r'\b\d+\b','', text)
+        # Remove extra spaces/newlines
+        text = re.sub(r'\s+', ' ', text)
+        text = text.strip()
+        doc.page_content = text
+        cleaned_docs.append(doc)
+    return cleaned_docs
+
 import os
 from langchain.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -54,9 +71,14 @@ def create_or_get_index(index_name, dimension=384):
 # Main execution (only runs when executed directly)
 # -----------------------------
 if __name__ == "__main__":
-    # Load & split documents
+    # Load PDFs
     extracted_data = load_pdf_file("Data/")
-    text_chunks = text_split(extracted_data)
+
+    # Clean the text
+    cleaned_data = clean_text(extracted_data)
+
+    # Split documents into chunks
+    text_chunks = text_split(cleaned_data)
     
     # Load embeddings
     embeddings = download_hugging_face_embeddings()
